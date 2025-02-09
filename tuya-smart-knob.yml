@@ -222,7 +222,7 @@ action:
                   2800
                 {% endif %}
               transition: !input light_transition
-      
+              
       - conditions:
           - condition: template
             value_template: "{{ command == 'rotate_right' and states[light_entity].state == 'off' }}"
@@ -231,8 +231,7 @@ action:
             target:
               entity_id: !input light_entity
             data:
-              brightness_pct: "{{ min_brightness }}"
+              brightness: "{{ (min_brightness | int * 255 / 100) | int }}"
               transition: !input light_transition
-
 mode: !input automation_mode
 max_exceeded: silent
