@@ -158,7 +158,7 @@ action:
                 {% set increase = step_percent * 255 / 100 %}
                 {% set new_value = current + increase %}
                 {# Convert the user-specified maximum (in percent) to the 0–255 scale #}
-                {% set max_val = (max_brightness | int) * 255 / 100 %}
+                {% set max_val = (max_brightness | default(100) | int) * 255 / 100 %}
                 {{ [new_value, max_val] | min | int }}
               transition: !input light_transition
 
