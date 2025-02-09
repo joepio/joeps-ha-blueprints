@@ -225,7 +225,7 @@ action:
               
       - conditions:
           - condition: template
-            value_template: "{{ command == 'rotate_right' and states[light_entity].state == 'off' }}"
+            value_template: "{{ command == 'rotate_right' and states(light_entity) is not none and states(light_entity).state == 'off' }}"
         sequence:
           - service: light.turn_on
             target:
@@ -233,5 +233,7 @@ action:
             data:
               brightness: "{{ (min_brightness | int * 255 / 100) | int }}"
               transition: !input light_transition
+
+
 mode: !input automation_mode
 max_exceeded: silent
