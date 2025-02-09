@@ -176,7 +176,7 @@ action:
                 {% set decrease = step_percent * 255 / 100 %}
                 {% set new_value = current - decrease %}
                 {# Convert the user-specified minimum (in percent) to the 0–255 scale #}
-                {% set min_val = (min_brightness | int) * 255 / 100 %}
+                {% set min_val = (min_brightness | default(1) | int) * 255 / 100 %}
                 {{ [new_value, min_val] | max | int }}
               transition: !input light_transition
 
@@ -193,7 +193,7 @@ action:
                 {% set current = state_attr(light_entity, 'color_temp_kelvin') %}
                 {% if current is not none %}
                   {% set new_temp = current + (step_percent * step_multiplier) %}
-                  {{ [new_temp, (kelvin_max | int)] | min | int }}
+                  {{ [new_temp, (kelvin_max | default(6500) | int)] | min | int }}
                 {% else %}
                   2800
                 {% endif %}
@@ -212,7 +212,7 @@ action:
                 {% set current = state_attr(light_entity, 'color_temp_kelvin') %}
                 {% if current is not none %}
                   {% set new_temp = current - (step_percent * step_multiplier) %}
-                  {{ [new_temp, (kelvin_min | int)] | max | int }}
+                  {{ [new_temp, (kelvin_min | default(2000) | int)] | max | int }}
                 {% else %}
                   2800
                 {% endif %}
