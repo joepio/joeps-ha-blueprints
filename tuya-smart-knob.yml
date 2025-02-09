@@ -18,7 +18,7 @@ blueprint:
     
      - Press button: Toggle light
      
-     - Turn left/right: Change brightness / dim light
+     - Turn left/right: Change brightness
      
      - Press, hold **and then** turn left/right: Change color temperature
     </details>
@@ -34,8 +34,10 @@ blueprint:
      - Minimum and maximum color temperature can be set. See [here](https://en.wikipedia.org/wiki/Color_temperature) to match Kelvin values with your desired effect.
      
      - Fine-tune the resolution of the color temperature adjustments through step multiplier (1-10).
+
+     - Turns on the lights upon turning the knob to the right
     </details>
-    
+
     Forked from https://community.home-assistant.io/t/zigbee2mqtt-control-light-entity-including-press-turn-with-tuya-moes-smart-knob-ers-10tzbvk-aa/787779
     
   source_url: https://raw.githubusercontent.com/TriggrHappy/blueprint_tuya_smart_knob/refs/heads/main/blueprint.yaml
@@ -219,6 +221,17 @@ action:
                 {% else %}
                   2800
                 {% endif %}
+              transition: !input light_transition
+      
+      - conditions:
+          - condition: template
+            value_template: "{{ command == 'rotate_right' and states(light_entity) == 'off' }}"
+        sequence:
+          - service: light.turn_on
+            target:
+              entity_id: !input light_entity
+            data:
+              brightness_pct: "{{ min_brightness }}"
               transition: !input light_transition
 
 mode: !input automation_mode
