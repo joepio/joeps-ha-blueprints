@@ -36,6 +36,8 @@ blueprint:
      - Fine-tune the resolution of the color temperature adjustments through step multiplier (1-10).
     </details>
     
+    Forked from https://community.home-assistant.io/t/zigbee2mqtt-control-light-entity-including-press-turn-with-tuya-moes-smart-knob-ers-10tzbvk-aa/787779
+    
   source_url: https://raw.githubusercontent.com/TriggrHappy/blueprint_tuya_smart_knob/refs/heads/main/blueprint.yaml
   domain: automation
   input:
