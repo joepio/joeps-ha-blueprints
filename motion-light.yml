@@ -1,5 +1,5 @@
 blueprint:
-  name: Occupancy Detection Response (SML001) - Zigbee2MQTT
+  name: Hue Motion Sensor Lights (zigbee2mqtt)
   description: |
     Controls a light (or lights) using a Philips Hue SML001 motion sensor connected to Home Assistant via Zigbee2MQTT.
     - Turns on lights when occupancy is detected and off when unoccupied.
