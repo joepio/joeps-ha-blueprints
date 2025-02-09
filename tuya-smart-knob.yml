@@ -225,7 +225,7 @@ action:
       
       - conditions:
           - condition: template
-            value_template: "{{ command == 'rotate_right' and states(light_entity) == 'off' }}"
+            value_template: "{{ command == 'rotate_right' and states[light_entity].state == 'off' }}"
         sequence:
           - service: light.turn_on
             target:
