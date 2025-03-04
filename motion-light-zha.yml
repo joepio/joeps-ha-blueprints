@@ -2,10 +2,11 @@ blueprint:
   name: Hue Motion Sensor Lights (ZigbeeHomeAssistant)
   description: |
     Controls a light (or lights) using a Philips Hue SML001 motion sensor connected to Home Assistant via ZHA.
-    - Turns on lights when occupancy is detected and off when unoccupied.
-    - Uses different brightness settings for day and night.
-    - Optionally, disables motion-based activation if a media player (e.g., TV) is on.
-    - Allows user-configurable fade-in and fade-out times for smooth lighting effects.
+    - Sets the sensor attributes when Home Assistant boots
+    - Turns on lights when occupancy is detected and off when unoccupied
+    - Uses different brightness settings for day and night
+    - Optionally, disables motion-based activation if a media player (e.g., TV) is on
+    - Allows user-configurable fade-in and fade-out times for smooth lighting effects
   domain: automation
   input:
     occupancy_entity:
@@ -16,9 +17,17 @@ blueprint:
           domain: binary_sensor
           device_class: occupancy
 
+    ieee_id:
+      name: Occupancy Sensor Zigbee IEEE ID
+      description: "The zigbee network id of the sensor (found in ZHA configuration)"
+      selector:
+        text:
+
     o_to_u_delay:
       name: Occupied to Unoccupied Delay
-      description: "Time in seconds before turning off lights after last motion detection (Note: this setting needs to be changed in the ZHA device configuration)"
+      description: |
+        Time in seconds before turning off lights after last motion detection.
+        NOTE: Requires HA restart after changing this value.
       default: 180
       selector:
         number:
@@ -29,7 +38,9 @@ blueprint:
 
     sensitivity:
       name: Sensor Sensitivity
-      description: "Adjusts motion sensitivity - needs to be changed in ZHA device configuration (0 = least sensitive, 2 = most sensitive)"
+      description: |
+        Adjusts motion sensitivity (0 = least sensitive, 2 = most sensitive)
+        NOTE: Requires HA restart after changing this value.
       default: 2
       selector:
         number:
@@ -151,12 +162,15 @@ blueprint:
             domain: media_player
 
 variables:
+  ieee_id: !input ieee_id
   disable_entity: !input disable_entity
   media_entity: !input media_entity
 
 mode: single
 
 trigger:
+  - platform: homeassistant
+    event: start
   - platform: state
     entity_id: !input occupancy_entity
 
@@ -174,6 +188,29 @@ action:
     choose:
       - conditions:
           - condition: template
+            value_template: "{{ trigger.platform == 'homeassistant' }}"
+        sequence:
+          # Set device occupancy off delay
+          - service: zha.set_zigbee_cluster_attribute
+            data:
+              ieee: "{{ ieee_id }}"
+              endpoint_id: 2
+              cluster_id: 0x0406
+              cluster_type: in
+              attribute: 0x0010
+              value: !input o_to_u_delay
+          # Set device sensitivity
+          - service: zha.set_zigbee_cluster_attribute
+            data:
+              ieee: "{{ ieee_id }}"
+              endpoint_id: 2
+              cluster_id: 0x0406
+              cluster_type: in
+              attribute: 0x0030
+              value: !input sensitivity
+
+      - conditions:
+          - condition: template
             value_template: "{{ trigger.platform == 'state' and trigger.to_state.state == 'on' }}"
           - condition: numeric_state
             entity_id: !input illuminance_entity
@@ -182,9 +219,9 @@ action:
           - alias: "Night time or day time?"
             choose:
               - conditions:
-                  - condition: time
-                    after: "22:00:00"
-                    before: "07:00:00"
+                  - condition: sun
+                    after: sunset
+                    before: sunrise
                 sequence:
                   - service: light.turn_on
                     entity_id: !input light_entity
@@ -192,14 +229,13 @@ action:
                       brightness_pct: !input nighttime_brightness
                       kelvin: !input nighttime_colour
                       transition: !input fade_in_time
-              - conditions: []
-                sequence:
-                  - service: light.turn_on
-                    entity_id: !input light_entity
-                    data:
-                      brightness_pct: !input daytime_brightness
-                      kelvin: !input daytime_colour
-                      transition: !input fade_in_time
+              default:
+                - service: light.turn_on
+                  entity_id: !input light_entity
+                  data:
+                    brightness_pct: !input daytime_brightness
+                    kelvin: !input daytime_colour
+                    transition: !input fade_in_time
 
       - conditions:
           - condition: template
