@@ -99,6 +99,17 @@ blueprint:
           step: 1
           unit_of_measurement: "seconds"
 
+    delay_time:
+      name: Additional delay before turning off
+      description: "Additional time in seconds to wait after motion stops before turning off lights"
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 300
+          step: 5
+          unit_of_measurement: "seconds"
+
     disable_entity:
       name: Input Boolean to use for disabling sensor
       description: >
@@ -172,6 +183,8 @@ action:
           - condition: template
             value_template: "{{ trigger.platform == 'state' and trigger.to_state.state == 'off' }}"
         sequence:
+          - delay:
+              seconds: !input delay_time
           - target:
               entity_id: !input light_entity
             data:
