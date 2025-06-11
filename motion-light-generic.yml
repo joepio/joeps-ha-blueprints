@@ -1,64 +1,57 @@
 blueprint:
-  name: Hue-Style Motion Lighting (generic)
-  description: |
-    Smooth “Philips-Hue-like” motion lighting for *any* binary_sensor (occupancy or motion)
-    and *any* light entities, without requiring Zigbee2MQTT-specific commands.
-
-    • Multiple sensors can drive the same lights
-    • Multiple lights supported (individual entities or light groups)
-    • Separate day-time and night-time brightness / colour temperature
-    • Fade-in / fade-out transitions
-    • Optional ambient-light threshold, manual disable switch, and media-player override
-    • Lights turn off only after **all** sensors have been clear for the chosen delay
+  name: Hue-Style Motion Lighting (generic v1.1)
+  description: >
+    “Philips-Hue-like” motion lighting for any mix of binary_sensor and light
+    entities.  • Multiple sensors and lights • Day / night brightness split
+    • Fade-in / fade-out • Optional lux, manual disable, or media-player block.
 
   domain: automation
+
   input:
     occupancy_sensors:
-      name: Occupancy / Motion Sensors
-      description: "Select one or more binary_sensors with device_class occupancy *or* motion"
+      name: Occupancy / Motion sensors
       selector:
-        target:
-          entity:
-            domain: binary_sensor
+        entity:
+          domain: binary_sensor
+          device_class:
+            - motion
+            - occupancy
+          multiple: true
+
     light_targets:
-      name: Lights
-      description: "One or more lights or light groups to control"
+      name: Lights to control
       selector:
-        target:
-          entity:
-            domain: light
+        entity:
+          domain: light
+          multiple: true
 
     off_delay:
       name: Off-delay (seconds)
-      description: "How long after ALL sensors are clear before lights fade out"
       default: 180
       selector:
         number:
           min: 0
           max: 1800
+          unit_of_measurement: s
           mode: box
-          unit_of_measurement: "s"
 
     illuminance_entity:
       name: (Optional) Illuminance sensor
-      description: "Skip if you don’t want a lux check"
-      default: {}
       selector:
         entity:
           domain: sensor
           device_class: illuminance
-          multiple: false
+      default: ""
 
     illuminance_max:
       name: Lux threshold
-      description: "Only turn lights on when ambient lux is below this value"
       default: 6
       selector:
         number:
           min: 1
           max: 3000
+          unit_of_measurement: lx
           mode: box
-          unit_of_measurement: "lx"
 
     day_brightness:
       name: Day brightness (%)
@@ -79,33 +72,33 @@ blueprint:
           unit_of_measurement: "%"
 
     day_kelvin:
-      name: Day colour temperature (K)
+      name: Day colour temp (K)
       default: 4500
       selector:
         number:
           min: 1500
           max: 6500
           step: 100
-          unit_of_measurement: "K"
+          unit_of_measurement: K
 
     night_kelvin:
-      name: Night colour temperature (K)
+      name: Night colour temp (K)
       default: 3000
       selector:
         number:
           min: 1500
           max: 6500
           step: 100
-          unit_of_measurement: "K"
+          unit_of_measurement: K
 
     night_start:
-      name: Night-mode starts at
+      name: Night-mode starts
       default: "22:00:00"
       selector:
         time:
 
     night_end:
-      name: Night-mode ends at
+      name: Night-mode ends
       default: "07:00:00"
       selector:
         time:
@@ -118,7 +111,7 @@ blueprint:
           min: 0
           max: 15
           step: 0.5
-          unit_of_measurement: "s"
+          unit_of_measurement: s
 
     fade_out_time:
       name: Fade-out (s)
@@ -128,93 +121,105 @@ blueprint:
           min: 0
           max: 15
           step: 0.5
-          unit_of_measurement: "s"
+          unit_of_measurement: s
 
     disable_switch:
       name: (Optional) Manual disable switch
-      default: {}
       selector:
         entity:
           domain: input_boolean
+      default: ""
 
     media_player_block:
       name: (Optional) Disable when media-player is playing
-      default: {}
       selector:
         entity:
           domain: media_player
+      default: ""
 
+# ─────────── INTERNAL VARIABLES ───────────
 variables:
   sensors: !input occupancy_sensors
-  lights: !input light_targets
+  lights:  !input light_targets
   disable_sw: !input disable_switch
-  media_ent: !input media_player_block
+  media_ent:  !input media_player_block
   lux_ent: !input illuminance_entity
   lux_max: !input illuminance_max
   off_delay: !input off_delay
+  night_start: !input night_start
+  night_end:   !input night_end
+  night_brightness: !input night_brightness
+  day_brightness:   !input day_brightness
+  night_kelvin:     !input night_kelvin
+  day_kelvin:       !input day_kelvin
+  fade_in:  !input fade_in_time
+  fade_out: !input fade_out_time
 
 mode: restart
 max_exceeded: silent
 
+# ─────────── TRIGGER ───────────
 trigger:
-  # Any change on **any** chosen sensor
   - platform: state
     entity_id: !input occupancy_sensors
 
+# ─────────── GLOBAL CONDITIONS ───────────
 condition:
-  # 1) Optional manual disable
-  - condition: template
+  - condition: template          # manual disable
     value_template: >
-      {{ not disable_sw
-         or is_state(disable_sw, 'off') }}
-
-  # 2) Optional media-player override
-  - condition: template
+      {{ disable_sw == '' or is_state(disable_sw, 'off') }}
+  - condition: template          # media-player override
     value_template: >
-      {{ not media_ent
-         or is_state(media_ent, 'off')
-         or is_state(media_ent, 'idle')
-         or is_state(media_ent, 'standby') }}
+      {{ media_ent == '' or states(media_ent) in ['off','idle','standby'] }}
 
+# ─────────── ACTIONS ───────────
 action:
   - choose:
-      # ───────────── TURN-ON branch ─────────────
-      - conditions: "{{ trigger.to_state.state == 'on' }}"
+      # ── TURN-ON branch ──────────────────────────────
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.to_state.state == 'on' }}"
         sequence:
-          # Optional lux gate
+          # optional lux gate
           - condition: template
             value_template: >
-              {{ not lux_ent
-                 or (states(lux_ent) | float(9999)) < lux_max }}
+              {{ lux_ent == '' or (states(lux_ent) | float(9999)) < lux_max }}
 
-          # Decide whether we’re in night or day window
+          # night-mode?
           - variables:
               night_mode: >
-                {% set now = now().time() %}
+                {% set now_t = now().time() %}
                 {% set start = strptime(night_start, '%H:%M:%S').time() %}
-                {% set end = strptime(night_end, '%H:%M:%S').time() %}
+                {% set end   = strptime(night_end,   '%H:%M:%S').time() %}
                 {% if start < end %}
-                  {{ start <= now < end }}
+                  {{ start <= now_t < end }}
                 {% else %}
-                  {{ now >= start or now < end }}
+                  {{ now_t >= start or now_t < end }}
                 {% endif %}
+
           - service: light.turn_on
-            target: "{{ lights }}"
+            target:
+              entity_id: !input light_targets
             data:
-              transition: !input fade_in_time
+              transition: "{{ fade_in | float }}"
               brightness_pct: "{{ night_brightness if night_mode else day_brightness }}"
               kelvin: "{{ night_kelvin if night_mode else day_kelvin }}"
 
-      # ───────────── TURN-OFF branch ────────────
-      - conditions: "{{ trigger.to_state.state == 'off' }}"
+      # ── TURN-OFF branch ─────────────────────────────
+      - conditions:
+          - condition: template
+            value_template: "{{ trigger.to_state.state == 'off' }}"
         sequence:
-          # Wait until *all* sensors are clear for the off-delay
           - wait_template: >
-              {{ expand(sensors) | selectattr('state','eq','on') | list | length == 0 }}
+              {{ expand(sensors)
+                 | selectattr('state','eq','on')
+                 | list
+                 | length == 0 }}
             timeout: "{{ off_delay | int }}"
             continue_on_timeout: false
 
           - service: light.turn_off
-            target: "{{ lights }}"
+            target:
+              entity_id: !input light_targets
             data:
-              transition: !input fade_out_time
+              transition: "{{ fade_out | float }}"
