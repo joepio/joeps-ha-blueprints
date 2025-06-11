@@ -1,5 +1,14 @@
 # Joep's HomeAssistant blueprints
 
+## [Hue Motion Sensor Lights (generic)](/motion-light-generic.yml)
+
+Controls a light (or lights) using a generic motion sensor connected to Home Assistant.
+
+- Turns on lights when occupancy is detected and off when unoccupied.
+- Uses different brightness settings for day and night.
+- Optionally, disables motion-based activation if a media player (e.g., TV) is on.
+- Allows user-configurable fade-in and fade-out times for smooth lighting effects.
+
 ## [Hue Motion Sensor Lights (zigbee2mqtt)](/motion-light.yml)
 
 Controls a light (or lights) using a Philips Hue SML001 motion sensor connected to Home Assistant via Zigbee2MQTT.
