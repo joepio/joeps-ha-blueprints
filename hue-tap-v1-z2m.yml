@@ -1,76 +1,51 @@
 blueprint:
-  name: Hue Tap v1 Button Actions Zigbee2MQTT
-  description: |
-    This blueprint triggers a user-specified action when a button on a Hue Tap is pressed.
+  name: Hue Tap v1 (MQTT Direct)
+  description: "Direct MQTT trigger for Hue Tap Gen 1 (No entity required)"
   domain: automation
   input:
-    hue_tap:
-      name: Hue Tap
-      description: "The Hue Tap that triggers actions"
-      selector:
-        device: {}
-
+    base_topic:
+      name: MQTT Topic
+      description: "The topic from your Z2M screenshot (e.g., zigbee2mqtt/Hue Tap switch)"
+      default: "zigbee2mqtt/Hue Tap switch"
     button_1_action:
-      name: First Button Action
-      description: "The action to execute when the first button is pressed."
+      name: "Button 1 (·)"
       default: []
       selector:
         action: {}
-
     button_2_action:
-      name: Second Button Action
-      description: "The action to execute when the second button is pressed."
+      name: "Button 2 (··)"
       default: []
       selector:
         action: {}
-
     button_3_action:
-      name: Third Button Action
-      description: "The action to execute when the third button is pressed."
+      name: "Button 3 (···)"
       default: []
       selector:
         action: {}
-
     button_4_action:
-      name: Fourth Button Action
-      description: "The action to execute when the fourth button is pressed."
+      name: "Button 4 (····)"
       default: []
       selector:
         action: {}
 
-mode: queued
+mode: restart
 
 trigger:
-- platform: device
-  device_id: !input hue_tap
-  domain: mqtt
-  type: action
-  subtype: press_1
-- platform: device
-  device_id: !input hue_tap
-  domain: mqtt
-  type: action
-  subtype: press_2
-- platform: device
-  device_id: !input hue_tap
-  domain: mqtt
-  type: action
-  subtype: press_3
-- platform: device
-  device_id: !input hue_tap
-  domain: mqtt
-  type: action
-  subtype: press_4
-
-condition: []
+  - platform: mqtt
+    topic: !input base_topic
+    # Z2M sends the action in the 'action' field of the JSON payload
+    # We trigger whenever the 'action' field is present
 
 action:
+  - variables:
+      # This extracts 'press_1', 'press_2', etc., from the JSON payload
+      action_value: "{{ trigger.payload_json.action }}"
   - choose:
-      - conditions: "{{ trigger.payload == 'press_1' }}"
+      - conditions: "{{ action_value == 'press_1' }}"
         sequence: !input button_1_action
-      - conditions: "{{ trigger.payload == 'press_2' }}"
+      - conditions: "{{ action_value == 'press_2' }}"
         sequence: !input button_2_action
-      - conditions: "{{ trigger.payload == 'press_3' }}"
+      - conditions: "{{ action_value == 'press_3' }}"
         sequence: !input button_3_action
-      - conditions: "{{ trigger.payload == 'press_4' }}"
+      - conditions: "{{ action_value == 'press_4' }}"
         sequence: !input button_4_action
