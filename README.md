@@ -39,3 +39,9 @@ Controls a light (or lights) using a Philips Hue SML001 motion sensor connected 
 - Turns on the lights upon rotation
 
 [![Install](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fjoepio%2Fjoeps-ha-blueprints%2Fblob%2Fmaster%2Ftuya-smart-knob.yml)
+
+## [Philips Hue Tap v1 Z2M](/hue-tap-v1-z2m.yml)
+
+- Use the 4 buttons
+
+[![Install](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fjoepio%2Fjoeps-ha-blueprints%2Fblob%2Fmaster%2Fhue-tap-v1-z2m.yml)
