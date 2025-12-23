@@ -1,11 +1,11 @@
 blueprint:
-  name: Hue Tap Gen 1 (Direct MQTT Topic)
-  description: "Bypasses device entities to avoid UI errors."
+  name: Hue Tap Gen 1 (MQTT Direct - No Entity)
+  description: "Bypasses the action entity to avoid frontend errors."
   domain: automation
   input:
     mqtt_topic:
       name: MQTT Topic
-      description: "Copy from your Z2M screenshot: zigbee2mqtt/Hue Tap switch/action"
+      description: "From your screenshot: zigbee2mqtt/Hue Tap switch/action"
       default: "zigbee2mqtt/Hue Tap switch/action"
     button_1:
       name: "Button 1 (·)"
