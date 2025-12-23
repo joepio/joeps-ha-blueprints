@@ -1,28 +1,28 @@
 blueprint:
-  name: Hue Tap v1 (MQTT Direct)
-  description: "Direct MQTT trigger for Hue Tap Gen 1 (No entity required)"
+  name: Hue Tap Gen 1 (Direct MQTT Topic)
+  description: "Bypasses device entities to avoid UI errors."
   domain: automation
   input:
-    base_topic:
+    mqtt_topic:
       name: MQTT Topic
-      description: "The topic from your Z2M screenshot (e.g., zigbee2mqtt/Hue Tap switch)"
-      default: "zigbee2mqtt/Hue Tap switch"
-    button_1_action:
+      description: "Copy from your Z2M screenshot: zigbee2mqtt/Hue Tap switch/action"
+      default: "zigbee2mqtt/Hue Tap switch/action"
+    button_1:
       name: "Button 1 (·)"
       default: []
       selector:
         action: {}
-    button_2_action:
+    button_2:
       name: "Button 2 (··)"
       default: []
       selector:
         action: {}
-    button_3_action:
+    button_3:
       name: "Button 3 (···)"
       default: []
       selector:
         action: {}
-    button_4_action:
+    button_4:
       name: "Button 4 (····)"
       default: []
       selector:
@@ -32,20 +32,15 @@ mode: restart
 
 trigger:
   - platform: mqtt
-    topic: !input base_topic
-    # Z2M sends the action in the 'action' field of the JSON payload
-    # We trigger whenever the 'action' field is present
+    topic: !input mqtt_topic
 
 action:
-  - variables:
-      # This extracts 'press_1', 'press_2', etc., from the JSON payload
-      action_value: "{{ trigger.payload_json.action }}"
   - choose:
-      - conditions: "{{ action_value == 'press_1' }}"
-        sequence: !input button_1_action
-      - conditions: "{{ action_value == 'press_2' }}"
-        sequence: !input button_2_action
-      - conditions: "{{ action_value == 'press_3' }}"
-        sequence: !input button_3_action
-      - conditions: "{{ action_value == 'press_4' }}"
-        sequence: !input button_4_action
+      - conditions: '{{ trigger.payload == "press_1" }}'
+        sequence: !input button_1
+      - conditions: '{{ trigger.payload == "press_2" }}'
+        sequence: !input button_2
+      - conditions: '{{ trigger.payload == "press_3" }}'
+        sequence: !input button_3
+      - conditions: '{{ trigger.payload == "press_4" }}'
+        sequence: !input button_4
